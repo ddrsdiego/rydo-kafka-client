@@ -12,7 +12,7 @@
         {
             var consumer = Substitute.For<IConsumer<byte[], byte[]>>();
             var messageDispatcher = Substitute.For<IMessageDispatcher>();
-            
+
             var consumerContext = GetConsumerContext();
             var consumerRecords = GetConsumerRecords(partitionCounter, offsetCounter);
             var receiveContext = new ReceivedContext("consumer-name");

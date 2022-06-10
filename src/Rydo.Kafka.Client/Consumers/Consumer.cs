@@ -6,13 +6,13 @@
     using Confluent.Kafka;
     using Microsoft.Extensions.Logging;
 
-    public interface IConsumer
+    public interface IConsumer : IDisposable
     {
         string? Name { get; }
-        
+
         void Subscribe(ConsumerContext<byte[], byte[]>? consumerContext);
 
-        ValueTask<ConsumeResult<byte[], byte[]>?> ConsumeAsync(CancellationToken cancellationToken);
+        ConsumeResult<byte[], byte[]>? Consume(CancellationToken cancellationToken);
 
         ValueTask Commit(ConsumerRecord consumerRecord);
     }
@@ -25,7 +25,7 @@
 
         public Consumer(ILogger<Consumer> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public string? Name => _consumer?.Name;
@@ -35,34 +35,33 @@
             _consumerContext = consumerContext;
         }
 
-        public async ValueTask<ConsumeResult<byte[], byte[]>?> ConsumeAsync(CancellationToken cancellationToken)
+        public ConsumeResult<byte[], byte[]>? Consume(CancellationToken cancellationToken)
         {
-            while (true)
-            {
-                try
-                {
-                    EnsureConsumer();
-                    await Task.Delay(1, cancellationToken);
-                    
-                    return _consumer?.Consume(cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (KafkaException e) when (e.Error.IsFatal)
-                {
-                    _logger.LogError(e, "Kafka Consumer fatal error occurred. Recreating consumer in 5 seconds");
-                    
-                    InvalidateConsumer();
+            ConsumeResult<byte[], byte[]>? consumeResult = default;
 
-                    await Task.Delay(5_000, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Kafka Consumer Error");
-                }
+            try
+            {
+                EnsureConsumer();
+                consumeResult = _consumer?.Consume(cancellationToken);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (KafkaException e) when (e.Error.IsFatal)
+            {
+                _logger.LogError(e, "Kafka Consumer fatal error occurred. Recreating consumer in 5 seconds");
+
+                InvalidateConsumer();
+
+                Thread.Sleep(5_000);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Kafka Consumer Error");
+            }
+
+            return consumeResult;
         }
 
         public ValueTask Commit(ConsumerRecord consumerRecord)
@@ -75,10 +74,10 @@
         {
             if (_consumer != null)
                 return;
-            
+
             _consumer = _consumerContext?.ConsumerBuilder
                 .Build();
-            
+
             _consumer?.Subscribe(_consumerContext?.ConsumerSpecification.Topic.Name);
         }
 
@@ -87,5 +86,7 @@
             _consumer?.Close();
             _consumer = null;
         }
+
+        public void Dispose() => InvalidateConsumer();
     }
 }

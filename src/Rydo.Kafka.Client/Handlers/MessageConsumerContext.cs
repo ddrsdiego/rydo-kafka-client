@@ -12,7 +12,7 @@
             ConsumerContext<byte[], byte[]>? consumerContext,
             IReceivedContext received,
             IMessageDispatcher? dispatcher,
-            IConsumer<byte[], byte[]> consumer,
+            IConsumer? consumer,
             CancellationToken cancellationToken)
         {
             ConsumerRecords = consumerRecords;
@@ -25,7 +25,7 @@
         }
         
         internal readonly Type? HandlerType;
-        internal readonly IConsumer<byte[], byte[]> Consumer;
+        internal readonly IConsumer? Consumer;
         
         public readonly IMessageDispatcher? Dispatcher;
         public readonly IConsumerRecords ConsumerRecords;

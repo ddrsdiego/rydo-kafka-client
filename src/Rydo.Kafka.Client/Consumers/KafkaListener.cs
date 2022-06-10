@@ -23,9 +23,11 @@
 
         private ILogger? _logger;
         private IServiceProvider? _serviceProvider;
-        private IConsumer<byte[], byte[]>? _consumer;
+        private IConsumer? _consumer;
         private IMiddlewareExecutor? _middlewareExecutor;
         private CancellationToken _cancellationToken;
+
+        // private IConsumer<byte[], byte[]>? _consumer;
 
         private readonly Task _readerTask;
         private readonly Channel<ConsumeResult<byte[], byte[]>> _queue;
@@ -69,6 +71,7 @@
 
             _middlewareExecutor = new MiddlewareExecutor(dependencyResolver);
 
+            _consumer = new Consumer(dependencyResolver.GetRequiredService<ILogger<Consumer>>());
             _logger = dependencyResolver.GetRequiredService<ILogger<KafkaListener>>();
             _cancellationToken = dependencyResolver.GetRequiredService<IHostApplicationLifetime>()
                 .ApplicationStopping;
@@ -89,16 +92,17 @@
                 _consumerContext?.ConsumerSpecification.Topic.Name,
                 consumerConfig);
 
-            _consumer = _consumerContext?.ConsumerBuilder
-                .Build();
-            
-            _consumer?.Subscribe(_consumerContext?.ConsumerSpecification.Topic.Name);
+            // _consumer = _consumerContext?.ConsumerBuilder
+            //     .Build();
+            // _consumer?.Subscribe(_consumerContext?.ConsumerSpecification.Topic.Name);
+
+            _consumer?.Subscribe(_consumerContext);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 ConsumeResult<byte[], byte[]>? consumeResult = default;
 
-                consumeResult = _consumer?.Consume(stoppingToken);
+                consumeResult = _consumer!.Consume(stoppingToken);
                 if (consumeResult!.IsPartitionEOF)
                     continue;
 
@@ -163,7 +167,7 @@
             }
         }
 
-        private MessageConsumerContext CreateConsumerContext(IConsumer<byte[], byte[]>? consumer,
+        private MessageConsumerContext CreateConsumerContext(IConsumer? consumer,
             IConsumerRecords consumerRecords, IServiceScope? scope, CancellationToken cancellationToken)
         {
             var messageDispatcher = scope?.ServiceProvider.GetRequiredService<IMessageDispatcher>();

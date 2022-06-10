@@ -44,7 +44,6 @@
                 return _kafkaListenerStringContainer;
             });
 
-            _services.AddSingleton<IConsumer, Consumer>();
             _services.AddMiddlewares();
             _services.AddDeserializers<byte[]>();
             _services.AddSingleton(_consumerContextContainer);

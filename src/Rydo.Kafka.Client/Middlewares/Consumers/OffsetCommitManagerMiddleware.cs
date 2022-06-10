@@ -58,7 +58,7 @@
                     if (context.Consumer == null)
                         continue;
                     
-                    consumerRecord.Commit(context.Consumer);
+                    await context.Consumer.Commit(consumerRecord);
                     consumerRecord.LogMessageCommit(context.ConsumerRecords.BatchId, _logger);
                 }
                 catch (Exception e)
