@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Rydo.Kafka.Client\Rydo.Kafka.Client.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Consumers\Extensions" />
+      <Folder Include="Models\Extensions" />
+      <Folder Include="Repositories\Extensions" />
+    </ItemGroup>
+
+</Project>
